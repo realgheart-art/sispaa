@@ -227,8 +227,6 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover{background:rgba(201,162
       <button class="nav-item" data-view="sla"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="14" r="7"/><path d="M12 14V9M9 2h6"/></svg>Analisis SLA &amp; KPI</button>
       <div class="nav-group" id="grpManage">Pengurusan Kes</div>
       <button class="nav-item" data-view="daftar" id="navDaftar"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Daftar Manual</button>
-      <div class="nav-group" id="grpTools">Alatan &amp; Integrasi</div>
-      <button class="nav-item" data-view="sheets" id="navSheets"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Pautan Google Sheets</button>
     </nav>
     <div class="user-card">
       <div class="ava" id="ucAva">KPM</div>
@@ -316,19 +314,6 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover{background:rgba(201,162
             <span class="form-msg" id="formMsg"></span>
           </div>
           <div class="form-note" id="formNote"></div>
-        </div>
-      </section>
-
-      <!-- SHEETS -->
-      <section class="view" id="view-sheets">
-        <div class="vhead"><div class="eyebrow">Integrasi</div><h1>Pautan Google Sheets</h1><p>Status sambungan pangkalan data dan rujukan skema.</p></div>
-        <div class="int-card"><h3>Status Sambungan</h3>
-          <div class="int-row"><span class="k">Mod operasi</span><span class="v" id="intMode">—</span></div>
-          <div class="int-row"><span class="k">Endpoint GAS</span><span class="v mono" id="intUrl">—</span></div>
-          <div class="int-row"><span class="k">Jumlah rekod dimuatkan</span><span class="v" id="intCount">—</span></div>
-        </div>
-        <div class="int-card"><h3>Skema Data (tab ADUAN SISPAA)</h3>
-          <p class="mono" style="color:var(--ink-2);line-height:1.7">TAHUN · PPD · PENGADU · NO KES · ORANG YANG DIADU · SEKOLAH · BULAN · TARIKH TERIMA · TARIKH SELESAI · TEMPOH SELESAI · KES · KATEGORI KES · SUBKATEGORI · STATUS</p>
         </div>
       </section>
     </div>
@@ -447,8 +432,6 @@ function applyRole(){
   const showManage=!isMgmt;
   document.getElementById('navDaftar').classList.toggle('hidden',!showManage);
   document.getElementById('grpManage').classList.toggle('hidden',!showManage);
-  document.getElementById('navSheets').classList.toggle('hidden',SESSION.peranan!=='ADMIN_JPN');
-  document.getElementById('grpTools').classList.toggle('hidden',SESSION.peranan!=='ADMIN_JPN');
   // PPD filter lock
   const ppdBtn=document.getElementById('ppdBtn'),ppdLabel=document.getElementById('ppdLabel');
   const banner=document.getElementById('roleBanner');
@@ -462,7 +445,7 @@ function applyRole(){
   if(isPPD){fp.innerHTML='<option>'+SESSION.ppd+'</option>';fp.value=SESSION.ppd;fp.disabled=true;}
   else{fp.innerHTML=CFG.ppds.map(x=>'<option>'+x+'</option>').join('');fp.disabled=false;}
   document.getElementById('f_kategori').innerHTML='<option value="">— Pilih —</option>'+CFG.categories.map(x=>'<option>'+x+'</option>').join('');
-  updateSheetsView();
+  
 }
 function logout(){SESSION={nama:'',peranan:'',ppd:'',token:'',masked:false,clientMask:false};STATE.ppd='ALL';STATE.year='ALL';STATE.globalSearch='';STATE.tableSearch='';
   ['globalSearch','tableSearch'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -475,7 +458,7 @@ document.getElementById('logoutBtn').onclick=logout;
 let CURRENT_VIEW='eksekutif';
 function renderCurrent(){if(CURRENT_VIEW==='eksekutif'){renderKPI();renderPPDBar();renderMonthYearBar();renderPPDLine();renderCategory();renderStatus();}else if(CURRENT_VIEW==='direktori'){renderTable();}else if(CURRENT_VIEW==='sla'){renderSLASummary();renderSLA();}}
 function switchView(name){
-  if((name==='daftar'&&SESSION.peranan==='PENGURUSAN')||(name==='sheets'&&SESSION.peranan!=='ADMIN_JPN'))name='eksekutif';
+  if(name==='daftar'&&SESSION.peranan==='PENGURUSAN')name='eksekutif';
   CURRENT_VIEW=name;
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='view-'+name));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
@@ -486,7 +469,6 @@ document.querySelectorAll('.nav-item').forEach(b=>b.onclick=()=>switchView(b.dat
 /* ============ DAFTAR MANUAL ============ */
 function formMsg(msg,ok){const el=document.getElementById('formMsg');el.textContent=msg;el.className='form-msg '+(ok===true?'ok':ok===false?'err':'info');}
 function clearForm(){['f_noKes','f_pengadu','f_diadu','f_sekolah','f_sub','f_terima','f_selesai','f_kes'].forEach(id=>document.getElementById(id).value='');document.getElementById('f_kategori').value='';document.getElementById('f_status').value='Selesai';}
-function updateSheetsView(){document.getElementById('intMode').textContent=GAS_URL?'Mod Langsung (GAS)':'Mod Demo (data tertanam)';document.getElementById('intUrl').textContent=GAS_URL?GAS_URL.slice(0,48)+'…':'— (belum disambung)';document.getElementById('intCount').textContent=DATA.length+' rekod';}
 document.getElementById('clearCase').onclick=()=>{clearForm();formMsg('',null);};
 document.getElementById('submitCase').onclick=function(){
   const g=id=>document.getElementById(id);
@@ -502,7 +484,7 @@ document.getElementById('submitCase').onclick=function(){
   }else{
     const t=toDate(rec.terima),s=rec.selesai?toDate(rec.selesai):null;
     DATA.push({noKes:rec.noKes,pengadu:rec.pengadu||null,sekolah:rec.sekolah||null,ppd:rec.ppd,kategori:rec.kategori.toUpperCase(),subkategori:rec.sub||null,year:t.getFullYear(),month:t.getMonth(),tarikhTerima:t,tarikhSelesai:s,tempoh:s?calDays(t,s):null,status:rec.status});
-    btn.disabled=false;formMsg('Kes '+rec.noKes+' disimpan setempat (mod demo — tidak kekal).',true);clearForm();updateSheetsView();switchView('direktori');
+    btn.disabled=false;formMsg('Kes '+rec.noKes+' disimpan setempat (mod demo — tidak kekal).',true);clearForm();switchView('direktori');
   }
 };
 
@@ -518,7 +500,7 @@ yearPills.innerHTML=['ALL',...CFG.years].map(y=>`<button class="pill-btn ${y==='
 yearPills.querySelectorAll('.pill-btn').forEach(b=>b.onclick=()=>{STATE.year=b.dataset.year;yearPills.querySelectorAll('.pill-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderCurrent();});
 let gt;document.getElementById('globalSearch').oninput=e=>{clearTimeout(gt);gt=setTimeout(()=>{STATE.globalSearch=e.target.value.trim();renderCurrent();},220);};
 let tt;document.getElementById('tableSearch').oninput=e=>{clearTimeout(tt);tt=setTimeout(()=>{STATE.tableSearch=e.target.value.trim();renderTable();},180);};
-document.getElementById('refreshBtn').onclick=function(){this.classList.add('spin');setTimeout(()=>this.classList.remove('spin'),700);if(GAS_URL&&SESSION.token){fetchData().then(()=>{updateSheetsView();renderCurrent();}).catch(()=>{});}else{renderCurrent();}};
+document.getElementById('refreshBtn').onclick=function(){this.classList.add('spin');setTimeout(()=>this.classList.remove('spin'),700);if(GAS_URL&&SESSION.token){fetchData().then(()=>{renderCurrent();}).catch(()=>{});}else{renderCurrent();}};
 document.getElementById('pdfBtn').onclick=exportPDF;
 // theme
 const SUN='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
