@@ -271,7 +271,7 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover{background:rgba(201,162
 
       <!-- DIREKTORI -->
       <section class="view" id="view-direktori">
-        <div class="vhead"><div class="eyebrow">Rekod Penuh</div><h1>Direktori Kes</h1><p>Senarai kes lengkap dengan tarikh terima, selesai, dan tempoh tindakan.</p></div>
+        <div class="vhead"><div class="eyebrow">Rekod Penuh</div><h1>Direktori Kes</h1><p>Senarai kes lengkap. Tempoh dipaparkan dalam dua kiraan: hari kalendar (sheet) dan hari bekerja (buang Jumaat/Sabtu &amp; cuti).</p></div>
         <div class="filters">
           <div class="dropdown" id="ppdDropdown2"></div>
         </div>
@@ -280,7 +280,7 @@ tbody tr:last-child td{border-bottom:none}tbody tr:hover{background:rgba(201,162
             <div class="tsearch"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="tableSearch" placeholder="Tapis dalam jadual…"></div>
             <button class="btn-pdf" id="pdfBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/></svg>Muat Turun PDF</button>
           </div>
-          <div class="tbl-scroll"><table><thead><tr><th>No Kes</th><th>Nama Pengadu</th><th>Sekolah</th><th>PPD</th><th>Kategori</th><th>Terima</th><th>Selesai</th><th>Tempoh</th><th>Status</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+          <div class="tbl-scroll"><table><thead><tr><th>No Kes</th><th>Nama Pengadu</th><th>Sekolah</th><th>PPD</th><th>Kategori</th><th>Terima</th><th>Selesai</th><th title="Hari kalendar (nilai sheet)">Tempoh</th><th title="Hari bekerja — buang Jumaat/Sabtu + cuti">Hari Bekerja</th><th>Status</th></tr></thead><tbody id="tableBody"></tbody></table></div>
         </div>
       </section>
 
@@ -390,9 +390,9 @@ function renderSLASummary(){const d=baseFilter().filter(r=>r.status==='Selesai')
 
 function renderTable(){let d=baseFilter().slice().sort((a,b)=>(a.year*12+a.month)-(b.year*12+b.month));
   if(STATE.tableSearch){const q=STATE.tableSearch.toLowerCase();d=d.filter(r=>(r.noKes||'').toLowerCase().includes(q)||(r.pengadu||'').toLowerCase().includes(q)||(r.sekolah||'').toLowerCase().includes(q)||(r.ppd||'').toLowerCase().includes(q)||(r.kategori||'').toLowerCase().includes(q));}
-  const body=document.getElementById('tableBody');if(!d.length){body.innerHTML='<tr><td colspan="9" class="empty">Tiada kes sepadan.</td></tr>';return;}
-  body.innerHTML=d.map(r=>{const t=(r.tempoh===null?null:r.tempoh);const tCls=t===null?'':(t<=CFG.slaTarget?'ok':'late');const tTxt=t===null?'—':(t+' Hari');
-    return `<tr><td class="no-kes">${r.noKes}</td><td class="nm">${dispName(r.pengadu)}</td><td>${r.sekolah||'—'}</td><td>${r.ppd.replace('PPD ','')}</td><td>${r.kategori}</td><td>${fmtDate(r.tarikhTerima)}</td><td>${r.tarikhSelesai?fmtDate(r.tarikhSelesai):'—'}</td><td class="tempoh ${tCls}">${tTxt}</td><td><span class="st ${r.status==='Selesai'?'selesai':'proses'}">${r.status}</span></td></tr>`;}).join('');}
+  const body=document.getElementById('tableBody');if(!d.length){body.innerHTML='<tr><td colspan="10" class="empty">Tiada kes sepadan.</td></tr>';return;}
+  body.innerHTML=d.map(r=>{const t=(r.tempoh===null?null:r.tempoh);const tCls=t===null?'':(t<=CFG.slaTarget?'ok':'late');const tTxt=t===null?'—':(t+' Hari');const wb=(r.tarikhTerima&&r.tarikhSelesai)?workingDays(r.tarikhTerima,r.tarikhSelesai):null;const wbCls=wb===null?'':(wb<=CFG.slaTarget?'ok':'late');const wbTxt=wb===null?'—':(wb+' Hari');
+    return `<tr><td class="no-kes">${r.noKes}</td><td class="nm">${dispName(r.pengadu)}</td><td>${r.sekolah||'—'}</td><td>${r.ppd.replace('PPD ','')}</td><td>${r.kategori}</td><td>${fmtDate(r.tarikhTerima)}</td><td>${r.tarikhSelesai?fmtDate(r.tarikhSelesai):'—'}</td><td class="tempoh ${tCls}">${tTxt}</td><td class="tempoh ${wbCls}">${wbTxt}</td><td><span class="st ${r.status==='Selesai'?'selesai':'proses'}">${r.status}</span></td></tr>`;}).join('');}
 
 /* ============ PDF ============ */
 function exportPDF(){const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4'});const d=baseFilter();const selesai=d.filter(r=>r.status==='Selesai');const pct=d.length?Math.round(selesai.length/d.length*100):0;const slas=selesai.map(r=>r.tempoh).filter(n=>n!==null&&n>0);const avg=slas.length?(slas.reduce((a,b)=>a+b,0)/slas.length).toFixed(1):'0';const scope=(STATE.ppd==='ALL'?'Semua PPD':STATE.ppd)+'  ·  '+(STATE.year==='ALL'?'Semua Tahun':'Tahun '+STATE.year);
